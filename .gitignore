@@ -1,0 +1,69 @@
+# -----------------------
+# Python
+# -----------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.env
+*.log
+
+# Virtual Environment
+venv/
+.env/
+
+# -----------------------
+# Jupyter / Notebooks
+# -----------------------
+.ipynb_checkpoints
+
+# -----------------------
+# ML / Models / Data
+# -----------------------
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.onnx
+models/
+data/vector_database/
+data/docs/*.pkl
+rewards.pkl
+q_table.pkl
+
+# -----------------------
+# ESP32 / Arduino
+# -----------------------
+*.elf
+*.bin
+*.hex
+*.map
+*.eep
+*.dmp
+esp32_env.h
+/.pio/
+*.ino
+
+# -----------------------
+# IDE / Editor
+# -----------------------
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------
+# Audio / Temporary Files
+# -----------------------
+*.wav
+*.mp3
+*.tmp
+*.temp
+
+# -----------------------
+# OS
+# -----------------------
+.DS_Store
+Thumbs.db
