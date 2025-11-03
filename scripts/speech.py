@@ -14,6 +14,12 @@ import wavio
 
 # ==================== Text-to-Speech ====================
 engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+
+# Stimme wird festgelegt
+engine.setProperty('voice', 'com.apple.voice.compact.de-DE.Anna')
+engine.setProperty('rate', 165)
+engine.setProperty('volume', 0.9)
 
 def speak(text: str):
     """
@@ -55,6 +61,6 @@ def speech_to_text(duration: int = 5):
 
 # ==================== Testlauf ====================
 if __name__ == "__main__":
-    speak("Hallo, ich bin Daisy, dein Roboterassistent.")
-    text = speech_to_text(duration=5)
-    print("Sie haben folgendes gesagt:", text)
+    #speak("Hallo, ich bin Daisy, dein Roboterassistent.")
+    text = speech_to_text(duration=2)
+    speak("Sie haben folgendes gesagt: "+text)
