@@ -10,7 +10,7 @@ from load_docs import load_documents
 import pickle
 from ml_models import create_rag_chain, load_llama
 from speech import speech_to_text, speak
-from autonomous_drive import autonomous_drive
+from autonomous_drive import autonomous_drive_'
 from llm_control import llm_controller
 from memory.conversation import add_message
 from memory.log import log_event
