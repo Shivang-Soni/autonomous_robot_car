@@ -1,0 +1,11 @@
+# Audioaufnahme und -verarbeitung
+numpy>=1.21.0
+sounddevice>=0.4.0
+wavio>=0.0.4
+
+# Text to Speech (TTS)
+pyttsx3>=2.90
+
+# Speech to Text (STT)
+faster-whisper>=20230615
+
