@@ -7,5 +7,5 @@ wavio>=0.0.4
 pyttsx3>=2.90
 
 # Speech to Text (STT)
-faster-whisper>=20230615
+faster-whisper>=1.0.0
 
