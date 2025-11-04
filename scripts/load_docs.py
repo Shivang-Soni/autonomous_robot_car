@@ -8,8 +8,8 @@ Dokumenten-Loader für RAG-Chain
 import os
 import logging
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 
 
 logging.basicConfig(
@@ -62,7 +62,7 @@ def load_documents(folder_path: str):
 
 # ====== Testlauf ======
 if __name__ == "__main__":
-    folder = "../data/docs"  # Beispielpfad
+    folder = "data/docs"  # Pfad zum Dokumentenordner
     docs = load_documents(folder)
     if docs:
         logging.info("Dokumente wurden erfolgreich geladen!")
