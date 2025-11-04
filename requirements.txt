@@ -9,7 +9,18 @@ pyttsx3>=2.90
 # Speech to Text (STT)
 faster-whisper>=1.0.0
 
-# Dokumentverarbeitung
+# Langchain Bibliotheken
 langchain>=0.1.0
 langchain-text-splitters>=0.1.0
 langchain-core>=0.1.0
+langchain_community>=0.1.0
+
+# Embedding und Vektorspeicherung
+chromadb>=0.4.0
+sentence-transformers>=2.2.2
+
+# Transformers und Hugging Face Pipelines
+transformers>=4.35.0
+torch>=2.0.0
+accelerate>=0.23.0
+
