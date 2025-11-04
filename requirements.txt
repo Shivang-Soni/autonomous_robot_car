@@ -9,3 +9,8 @@ pyttsx3>=2.90
 # Speech to Text (STT)
 faster-whisper>=1.0.0
 
+# Dokumentverarbeitung
+langchain>=0.1.0
+chromadb>=0.4.0
+tiktoken>=0.5.0
+
