@@ -1,5 +1,7 @@
-Q: Wie kalibriere ich den Sensor?
-A: Stelle sicher, dass er gerade montiert ist und keine losen Kabel hat.
+# FAQ: Sensor und Steuerung
 
-Q: Wie stoppe ich den Roboter sofort?
-A: Nutze den Befehl "stop" oder drücke STRG+C.
+Frage: Wie kalibriere ich den Sensor?  
+Antwort: Stelle sicher, dass er gerade montiert ist und keine losen Kabel hat.
+
+Frage: Wie stoppe ich den Roboter sofort?  
+Antwort: Nutze den Befehl "stop" oder drücke STRG+C.

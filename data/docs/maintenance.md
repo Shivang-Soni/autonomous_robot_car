@@ -1,6 +1,11 @@
-# Wartung
+Frage: Wie soll ich die Sensoren warten?  
+Antwort: Sensor regelmäßig reinigen.
 
-- Sensor regelmäßig reinigen.
-- Akku nicht tiefentladen (<3.2V pro Zelle).
-- Motoren schmieren, falls Geräusche auftreten.
-- Kabel prüfen: Wackelkontakte führen zu Fehlsteuerung.
+Frage: Worauf muss ich beim Akku achten?  
+Antwort: Akku nicht tiefentladen, Spannung unter 3.2V pro Zelle vermeiden.
+
+Frage: Was mache ich, wenn die Motoren Geräusche machen?  
+Antwort: Motoren schmieren.
+
+Frage: Wie überprüfe ich die Verkabelung?  
+Antwort: Kabel prüfen, da Wackelkontakte zu Fehlsteuerungen führen können.
