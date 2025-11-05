@@ -21,6 +21,11 @@ engine.setProperty('voice', 'com.apple.voice.compact.de-DE.Anna')
 engine.setProperty('rate', 165)
 engine.setProperty('volume', 0.9)
 
+# ==================== Speech-to-Text ====================
+# Whisper STT Modell laden
+model = WhisperModel("small")
+
+
 def speak(text: str):
     """
     Wandelt Text in Sprache um und gibt ihn über Lautsprecher aus
@@ -29,10 +34,6 @@ def speak(text: str):
         return
     engine.say(text)
     engine.runAndWait()
-
-# ==================== Speech-to-Text ====================
-# Whisper STT Modell laden
-model = WhisperModel("small")  # Alternativ "medium", "large" je nach Hardware
 
 def record_audio(duration: int = 5, fs: int = 16000):
     """
@@ -61,6 +62,5 @@ def speech_to_text(duration: int = 5):
 
 # ==================== Testlauf ====================
 if __name__ == "__main__":
-    #speak("Hallo, ich bin Daisy, dein Roboterassistent.")
     text = speech_to_text(duration=2)
     speak("Sie haben folgendes gesagt: "+text)
