@@ -4,11 +4,11 @@ Zentrale Konfiguration für Roboterprojekt
 Autor: Shivang Soni
 """
 import os
-from dotenv import load_env
+from dotenv import load_dotenv
 
 
 # Lade Umgebungsvariablen aus .env Datei
-load_env()
+load_dotenv()
 
 
 # ====================== Allgemein ======================
@@ -26,3 +26,5 @@ USE_HARDWARE = False  # True = echte Motoren/Sensoren, False = Dummy-Modus
 
 # ======================= Gemini API =======================
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")  # Google Gemini API-Schlüssel
+USE_GEMINI = os.getenv("USE_GEMINI", "True")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
