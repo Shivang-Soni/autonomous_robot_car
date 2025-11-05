@@ -1,7 +1,7 @@
-# Reinforcement Learning Basics
-
-- Agent → Roboter
-- Environment → Umgebung + Hindernisse
-- Action → Motorbefehle (vorwärts, links, rechts)
-- Reward → +1 wenn Hindernis vermieden, -1 wenn Kollision
-- Ziel: Maximieren der kumulierten Rewards
+Frage: Was sind die Grundlagen von Reinforcement Learning für den Roboter?  
+Antwort: 
+- Agent → der Roboter  
+- Environment → Umgebung inklusive Hindernissen  
+- Action → Motorbefehle wie vorwärts, links, rechts  
+- Reward → +1, wenn Hindernis vermieden, -1 bei Kollision  
+- Ziel → Maximierung der kumulierten Rewards

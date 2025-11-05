@@ -1,5 +1,8 @@
-# Motorsteuerung
+Frage: Wie steuere ich Motor A vorwärts?  
+Antwort: Setze Pin1 HIGH und Pin2 LOW.
 
-- Motor A: Vorwärts = Pin1 HIGH, Pin2 LOW
-- Motor B: Vorwärts = Pin3 HIGH, Pin4 LOW
-- Zum Stoppen beide LOW setzen.
+Frage: Wie steuere ich Motor B vorwärts?  
+Antwort: Setze Pin3 HIGH und Pin4 LOW.
+
+Frage: Wie stoppe ich die Motoren?  
+Antwort: Setze alle Pins (Pin1, Pin2, Pin3, Pin4) LOW.

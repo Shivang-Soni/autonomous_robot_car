@@ -1,6 +1,14 @@
-# ML Modelle für Selbstfahr-Roboter
+Frage: Welche ML-Modelle kann ich für den Selbstfahr-Roboter verwenden?  
+Antwort: Supervised Learning, Reinforcement Learning, RAG, Hybrid-Ansatz.
 
-- Supervised Learning: Linie folgen (klassische CNNs).
-- Reinforcement Learning: Hindernissen ausweichen.
-- RAG: Befehle verstehen & Wissen abrufen.
-- Hybrid: Kombination aus ML + Regel-basiert.
+Frage: Wofür wird Supervised Learning eingesetzt?  
+Antwort: Zum Linie-Folgen mit klassischen CNNs.
+
+Frage: Wofür wird Reinforcement Learning eingesetzt?  
+Antwort: Hindernissen ausweichen.
+
+Frage: Wofür wird RAG eingesetzt?  
+Antwort: Befehle verstehen und Wissen abrufen.
+
+Frage: Was ist der Hybrid-Ansatz?  
+Antwort: Kombination aus ML-Methoden und regelbasierten Steuerungen.
