@@ -38,7 +38,8 @@ def load_documents(folder_path: str):
     # Text in Chunks splitten
     splitter = RecursiveCharacterTextSplitter(
             chunk_size=500,   # 500 Zeichen pro Chunk
-            chunk_overlap=50  # 50 Zeichen Überlappung
+            chunk_overlap=50,  # 50 Zeichen Überlappung
+            separators=["\n\n", "\n", " ", ""]
             )
 
     for filename in os.listdir(folder_path):
@@ -47,6 +48,10 @@ def load_documents(folder_path: str):
                 file_path = os.path.join(folder_path, filename)
                 with open(file_path, "r", encoding="utf-8") as f:
                     text = f.read()
+                    
+                    if not text.strip():
+                        logging.warning(f"[WARN] Datei ist leer: {filename}")
+                        continue
 
                     chunks = splitter.split_text(text)
                     for chunk in chunks:
@@ -66,6 +71,6 @@ if __name__ == "__main__":
     docs = load_documents(folder)
     if docs:
         logging.info("Dokumente wurden erfolgreich geladen!")
-        logging.info(f"Erste 2 Dokumente: {docs[:2]}")
+        logging.info(f"{len(docs)} Dokumente insgesamt wurden geladen.)")
     else:
         logging.warning("[WARN] Keine Dokumente geladen.")
