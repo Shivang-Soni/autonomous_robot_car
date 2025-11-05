@@ -3,6 +3,13 @@
 Zentrale Konfiguration für Roboterprojekt
 Autor: Shivang Soni
 """
+import os
+from dotenv import load_env
+
+
+# Lade Umgebungsvariablen aus .env Datei
+load_env()
+
 
 # ====================== Allgemein ======================
 ROBOT_NAME = "Daisy"  # Name des Roboters
@@ -15,4 +22,7 @@ LOG_FILE = "memory/robot_log.json"   # JSON-Log für Events
 STATE_FILE = "memory/state.json"     # JSON-Datei für Robot-Zustand
 
 # ====================== Hardware / Dummy ======================
-USE_HARDWARE = False  # True = echte Motoren/Sensoren, False = Dummy-Modus (Simulation)
+USE_HARDWARE = False  # True = echte Motoren/Sensoren, False = Dummy-Modus
+
+# ======================= Gemini API =======================
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")  # Google Gemini API-Schlüssel
