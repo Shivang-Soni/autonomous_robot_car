@@ -7,6 +7,7 @@ Dokumenten-Loader für RAG-Chain
 """
 import os
 import logging
+import shutil
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
@@ -17,6 +18,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()]
 )
+
+shutil.rmtree("data/vector_database", ignore_errors=True)
 
 
 def load_documents(folder_path: str):
@@ -39,7 +42,7 @@ def load_documents(folder_path: str):
     splitter = RecursiveCharacterTextSplitter(
             chunk_size=500,   # 500 Zeichen pro Chunk
             chunk_overlap=50,  # 50 Zeichen Überlappung
-            separators=["\n\n", "\n", " ", ""]
+            separators=["\n\n", "\n"]
             )
 
     for filename in os.listdir(folder_path):
