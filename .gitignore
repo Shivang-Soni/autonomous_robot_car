@@ -32,6 +32,7 @@ data/vector_database/
 data/docs/*.pkl
 rewards.pkl
 q_table.pkl
+ml_models/Llama-2-7B-Chat-GGUF/
 
 # -----------------------
 # ESP32 / Arduino
@@ -53,6 +54,7 @@ esp32_env.h
 .idea/
 *.sublime-project
 *.sublime-workspace
+robot-env/
 
 # -----------------------
 # Audio / Temporary Files
