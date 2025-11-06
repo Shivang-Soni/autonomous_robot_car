@@ -1,11 +1,4 @@
-"""
-speech.py
-- Text-to-Speech (TTS) & Speech-to-Text (STT) Modul für den Roboter
-- MLOps-tauglich: Hardware-unabhängig testbar
-Autor: Shivang Soni
-"""
 import threading
-
 import pyttsx3
 import simpleaudio as sa
 import sounddevice as sd
@@ -13,21 +6,21 @@ import numpy as np
 import tempfile
 from faster_whisper import WhisperModel
 import wavio
+import logging
+import time
 
-# ===================== Thread Lock =====================
+# ===================== Thread Lock & Flag =====================
 speech_lock = threading.Lock()
+is_speaking = False  # globales Flag
 
 # ==================== Text-to-Speech ====================
 engine = pyttsx3.init()
-voices = engine.getProperty('voices')
-
-# Stimme wird festgelegt
-engine.setProperty('voice', 'com.apple.voice.compact.de-DE.Anna')
-engine.setProperty('rate', 165)
-engine.setProperty('volume', 0.9)
+voices = engine.getProperty("voices")
+engine.setProperty("voice", "com.apple.voice.compact.de-DE.Anna")
+engine.setProperty("rate", 165)
+engine.setProperty("volume", 0.9)
 
 # ==================== Speech-to-Text ====================
-# Whisper STT Modell laden
 model = WhisperModel("small")
 
 
@@ -39,21 +32,41 @@ def play_beep():
 
 def speak(text: str):
     """
-    Wandelt Text in Sprache um und gibt ihn über Lautsprecher aus
+    Wandelt Text in Sprache um und gibt ihn aus.
+    Blockiert STT durch globales Flag.
+    Sleep basierend auf Textlänge
     """
-    if not text:
+    global is_speaking
+    if not text.strip():
         return
     with speech_lock:
+        is_speaking = True
         engine.say(text)
         engine.runAndWait()
+        # einfacher Hack: ca. 120ms pro Zeichen Nachhall
+        time.sleep(len(text) * 0.12)
+        is_speaking = False
+
+
+def speak_threadsafe(text: str):
+    """Spreche Text nur, wenn gerade keine andere TTS läuft."""
+    global is_speaking
+    if is_speaking or not text.strip():
+        return
+    speak(text)
 
 
 def record_audio(duration: int = 5, fs: int = 16000):
     """
     Nimmt Audio über das Standardmikrofon auf
-    duration: Dauer in Sekunden
-    fs: Sampling-Rate
+    Wartet, bis TTS fertig ist
     """
+    global is_speaking
+    # warten, bis TTS fertig ist
+    while is_speaking:
+        logging.info("Warte auf Ende der Sprachausgabe...")
+        time.sleep(0.1)
+
     print("Aufnahme gestartet...")
     play_beep()
     audio = sd.rec(int(duration * fs), samplerate=fs, channels=1)
@@ -69,14 +82,13 @@ def speech_to_text(duration: int = 5):
     """
     audio, fs = record_audio(duration=duration)
     with tempfile.NamedTemporaryFile(suffix=".wav") as tmpfile:
-        # Temporäre WAV-Datei schreiben
         wavio.write(tmpfile.name, audio, fs, sampwidth=2)
         segments, info = model.transcribe(tmpfile.name)
-        # Alle Segmente zusammenfügen
         result = " ".join([segment.text for segment in segments])
         return result
+
 
 # ==================== Testlauf ====================
 if __name__ == "__main__":
     text = speech_to_text(duration=2)
-    speak("Sie haben folgendes gesagt: "+text)
+    speak("Sie haben folgendes gesagt: " + text)

@@ -24,6 +24,7 @@ _cached_chain = None
 # ====================== Audio Busy Flag ======================
 is_speaking = False  # Globales Flag
 
+
 def speak_threadsafe(text: str):
     """Sicher sprechen, Flag setzen."""
     global is_speaking
@@ -35,13 +36,16 @@ def speak_threadsafe(text: str):
     finally:
         is_speaking = False
 
+
 def _truncate_context(text: str, max_chars: int = 2000) -> str:
     return text[:max_chars] if text else ""
 
-def create_rag_chain(documents,
-                     vector_db_path="data/vector_database",
-                     model_path="ml_models/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"):
 
+def create_rag_chain(
+    documents,
+    vector_db_path="data/vector_database",
+    model_path="ml_models/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf",
+):
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     if os.path.exists(vector_db_path):
@@ -60,19 +64,29 @@ def create_rag_chain(documents,
                 "Du bist Daisy, ein Roboter-Assistent. "
                 "Antworte nur anhand des Kontextes. "
                 "Wenn keine Info vorhanden ist: \"Ich habe leider keine Auskünfte dazu.\"\n\n"
-                f"Kontext:\n{_truncate_context(context)}\n\nBenutzeranfrage:\n{query}"
+                "Wenn jedoch du aus eigenem Wissen beantworten kannst, "
+                "dann sage: \"Ich habe leider keine Auskünfte dazu. "
+                "Aber nach meiner Meinung möchte ich Ihnen etwas mitteilen: [kurze, präzise Antwort]\"\n\n"
+                "Leere Antworten sind nicht erlaubt.\n\n"
+                f"Kontext:\n{_truncate_context(context)}\n\n"
+                f"Benutzeranfrage:\n{query}"
             )
+
             resp = client.models.generate_content(
                 model=GEMINI_MODEL_NAME,
-                contents=[{"role": "user", "parts": [{"text": prompt}]}]
+                contents=[{"role": "user", "parts": [{"text": prompt}]}],
             )
-            try:
-                return getattr(resp,'text','') or resp.candidates[0].content.parts[0].text
-            except Exception:
+            res = getattr(resp, "text", "") or resp.candidates[0].content.parts[0].text
+            if res == "":
                 return "Ich habe leider keine Auskünfte dazu."
+            return res
+
     else:
-        llm = CTransformers(model=model_path, model_type="llama",
-                            config={"temperature":0.7,"max_new_tokens":512,"context_length":2048})
+        llm = CTransformers(
+            model=model_path,
+            model_type="llama",
+            config={"temperature": 0.7, "max_new_tokens": 512, "context_length": 2048},
+        )
 
         def llm_call(context: str, query: str) -> str:
             full_prompt = f"Kontext:\n{context}\n\nBenutzeranfrage:\n{query}"
@@ -82,12 +96,13 @@ def create_rag_chain(documents,
         if not query:
             return ""
         docs = vector_db.similarity_search_with_score(query, k=3)
-        filtered_docs = [d for d,s in docs if s >= 0.6]
+        filtered_docs = [d for d, s in docs if s >= 0.6]
         context = "\n".join([d.page_content for d in filtered_docs])
         logger.info(f"[INFO] Verwendeter Kontext: {context[:200]}...")
         return llm_call(context, query)
 
     return rag_pipeline
+
 
 def run(query: str):
     global _cached_chain
@@ -98,6 +113,7 @@ def run(query: str):
             logger.info(f"Doc {i}: {doc.metadata['source']} | {doc.page_content[:50]}...")
         _cached_chain = create_rag_chain(docs)
     return _cached_chain(query)
+
 
 # ====================== Interaktive Schleife ======================
 def interactive_loop(speech_enabled: bool = True):
@@ -135,6 +151,7 @@ def interactive_loop(speech_enabled: bool = True):
         except Exception as e:
             logger.error(f"Fehler: {e}")
             time.sleep(1)
+
 
 if __name__ == "__main__":
     interactive_loop(True)
