@@ -1,13 +1,12 @@
 # rag_transformer.py
 """
 RAG + LLaMA/Gemini Integration mit Daisy
-- Kein Threading: STT & TTS in Schleife, prüft, ob Audio läuft
+- Kein Threading, keine Locks, keine Flags
+- STT & TTS laufen sequenziell
 - Autor: Shivang Soni
 """
 import logging
 import os
-import time
-
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.llms import CTransformers
@@ -21,21 +20,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 _cached_chain = None
 
-# ====================== Audio Busy Flag ======================
-is_speaking = False  # Globales Flag
-
-
-def speak_threadsafe(text: str):
-    """Sicher sprechen, Flag setzen."""
-    global is_speaking
-    if is_speaking or not text.strip():
-        return  # Audio läuft, überspringen
-    try:
-        is_speaking = True
-        speak(text)
-    finally:
-        is_speaking = False
-
 
 def _truncate_context(text: str, max_chars: int = 2000) -> str:
     return text[:max_chars] if text else ""
@@ -46,14 +30,20 @@ def create_rag_chain(
     vector_db_path="data/vector_database",
     model_path="ml_models/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf",
 ):
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     if os.path.exists(vector_db_path):
         logger.info("Vektordatenbank gefunden und geladen.")
-        vector_db = Chroma(persist_directory=vector_db_path, embedding_function=embeddings)
+        vector_db = Chroma(
+            persist_directory=vector_db_path, embedding_function=embeddings
+        )
     else:
         logger.info("Erstelle neue Vektordatenbank...")
-        vector_db = Chroma.from_documents(documents, embeddings, persist_directory=vector_db_path)
+        vector_db = Chroma.from_documents(
+            documents, embeddings, persist_directory=vector_db_path
+        )
 
     if USE_GEMINI.lower() == "true" and GOOGLE_API_KEY:
         logger.info("Gemini LLM wird verwendet.")
@@ -63,23 +53,19 @@ def create_rag_chain(
             prompt = (
                 "Du bist Daisy, ein Roboter-Assistent. "
                 "Antworte nur anhand des Kontextes. "
-                "Wenn keine Info vorhanden ist: \"Ich habe leider keine Auskünfte dazu.\"\n\n"
-                "Wenn jedoch du aus eigenem Wissen beantworten kannst, "
+                "Wenn keine Info vorhanden ist oder du jedoch aus eigenem Wissen beantworten kannst, "
                 "dann sage: \"Ich habe leider keine Auskünfte dazu. "
                 "Aber nach meiner Meinung möchte ich Ihnen etwas mitteilen: [kurze, präzise Antwort]\"\n\n"
                 "Leere Antworten sind nicht erlaubt.\n\n"
                 f"Kontext:\n{_truncate_context(context)}\n\n"
                 f"Benutzeranfrage:\n{query}"
             )
-
             resp = client.models.generate_content(
                 model=GEMINI_MODEL_NAME,
                 contents=[{"role": "user", "parts": [{"text": prompt}]}],
             )
             res = getattr(resp, "text", "") or resp.candidates[0].content.parts[0].text
-            if res == "":
-                return "Ich habe leider keine Auskünfte dazu."
-            return res
+            return res or "Ich habe leider keine Auskünfte dazu."
 
     else:
         llm = CTransformers(
@@ -115,20 +101,14 @@ def run(query: str):
     return _cached_chain(query)
 
 
-# ====================== Interaktive Schleife ======================
 def interactive_loop(speech_enabled: bool = True):
     run("")  # RAG-Chain initialisieren
-    global is_speaking
 
     if speech_enabled:
-        speak_threadsafe("Hallo Shivang! Ich bin Daisy. Was möchten Sie fragen?")
+        speak("Hallo Shivang! Ich bin Daisy. Was möchten Sie fragen?")
 
     while True:
         try:
-            # Warten, bis TTS fertig ist
-            while speech_enabled and is_speaking:
-                time.sleep(0.1)
-
             # STT starten
             if speech_enabled:
                 query = speech_to_text(duration=5)
@@ -143,13 +123,14 @@ def interactive_loop(speech_enabled: bool = True):
 
             # TTS starten
             if speech_enabled:
-                speak_threadsafe(answer)
+                speak(answer)
 
         except KeyboardInterrupt:
             logger.info("Beende interaktive Schleife.")
             break
         except Exception as e:
             logger.error(f"Fehler: {e}")
+            import time
             time.sleep(1)
 
 
