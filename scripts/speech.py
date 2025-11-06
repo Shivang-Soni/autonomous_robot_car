@@ -4,13 +4,18 @@ speech.py
 - MLOps-tauglich: Hardware-unabhängig testbar
 Autor: Shivang Soni
 """
+import threading
 
 import pyttsx3
+import simpleaudio as sa
 import sounddevice as sd
 import numpy as np
 import tempfile
 from faster_whisper import WhisperModel
 import wavio
+
+# ===================== Thread Lock =====================
+speech_lock = threading.Lock()
 
 # ==================== Text-to-Speech ====================
 engine = pyttsx3.init()
@@ -26,14 +31,22 @@ engine.setProperty('volume', 0.9)
 model = WhisperModel("small")
 
 
+def play_beep():
+    wav_obj = sa.WaveObject.from_wave_file("scripts/beep.wav")
+    play_obj = wav_obj.play()
+    play_obj.wait_done()
+
+
 def speak(text: str):
     """
     Wandelt Text in Sprache um und gibt ihn über Lautsprecher aus
     """
     if not text:
         return
-    engine.say(text)
-    engine.runAndWait()
+    with speech_lock:
+        engine.say(text)
+        engine.runAndWait()
+
 
 def record_audio(duration: int = 5, fs: int = 16000):
     """
@@ -42,10 +55,13 @@ def record_audio(duration: int = 5, fs: int = 16000):
     fs: Sampling-Rate
     """
     print("Aufnahme gestartet...")
+    play_beep()
     audio = sd.rec(int(duration * fs), samplerate=fs, channels=1)
     sd.wait()
     print("Aufnahme beendet.")
+    play_beep()
     return audio.flatten(), fs
+
 
 def speech_to_text(duration: int = 5):
     """
