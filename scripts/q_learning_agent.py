@@ -109,6 +109,6 @@ if __name__ == "__main__":
     state = 10
     next_state = 8
     action = agent.choose_action(state)
-    print(f"Gewählte Aktion für state {state}: {action}")
+    logging.info(f"[INFO]Gewählte Aktion für state {state}: {action}")
     agent.learn(state, action, reward=5, next_state=next_state)
-    print(f"Q-Tabelle nach Update: {agent.q_table}")
+    logging.info(f"[INFO]Q-Tabelle nach Update: {agent.q_table}")
