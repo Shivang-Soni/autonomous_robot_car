@@ -4,8 +4,18 @@ QLearningAgent für autonome Robotik
 - MLOps-tauglich: Speichern/Laden von Q-Tables möglich
 Autor: Shivang Soni
 """
+from __future__ import annotations
 
+import json
+import os
+import pickle
+import tempfile
+from typing import Any, Dict, List, Iterable
 import random
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 class QLearningAgent:
     def __init__(self, actions, alpha=0.1, gamma=0.9, epsilon=0.2):
@@ -20,12 +30,22 @@ class QLearningAgent:
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
+    
+    def _serialise_state(self, state: Any) -> str:
+        """
+        Wandelt jeden Zustand in eine hashbar, JSON kompatible Zeichenkette um
+        """
+        try:
+            return json.dumps(state, sort_keys=True)
+        except TypeError:
+            return str(state)
 
     def get_q(self, state, action):
         """
         Q-Wert für einen Zustand und eine Aktion abrufen
         """
-        return self.q_table.get(state, {}).get(action, 0.0)
+        key = self._serialise_state(state)
+        return self.q_table.get(key, {}).get(action, 0.0)
 
     def choose_action(self, state):
         """
@@ -44,13 +64,43 @@ class QLearningAgent:
         """
         Q-Learning Update
         """
+        state_key = self._serialise_state(state)
+        next_state_key = self._serialise_state(next_state)
+
         old_q = self.get_q(state, action)
         next_max_q = max([self.get_q(next_state, a) for a in self.actions])
         new_q = old_q + self.alpha * (reward + self.gamma * next_max_q - old_q)
 
-        if state not in self.q_table:
-            self.q_table[state] = {}
-        self.q_table[state][action] = new_q
+        if state_key not in self.q_table:
+            self.q_table[state_key] = {}
+        self.q_table[state_key][action] = new_q
+
+    def save_q_table(self, filepath: str):
+        """
+        Speichert die Q-Tabelle in einer Datei
+        """
+        with open(filepath, 'wb') as f:
+            pickle.dump(self.q_table, f)
+            logging.info(
+                f"[INFO] Q-Tabelle gespeichert in directory: {filepath}"
+                )
+    
+    def load_q_table(self, filepath: str):
+        """
+        Lädt die Q-Tabelle aus einer Datei
+        """
+        if os.path.exists(filepath):
+            with open(filepath, 'rb') as f:
+                self.q_table = pickle.load(f)
+                logging.info(
+                    f"[INFO] Q-Tabelle geladen aus directory: {filepath}"
+                )
+        else:
+            logging.warning(
+                f"[WARN] Datei nicht gefunden: {filepath}."
+                f" Q-Tabelle nicht geladen."
+            )
+
 
 # ==================== Testlauf ====================
 if __name__ == "__main__":
