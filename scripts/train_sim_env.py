@@ -20,9 +20,11 @@ def random_start(env: SimEnv):
     return random.choice(free_positions)
 
 
-def train(grid_size=(5, 5), random_obstacles=True, num_random_obstacles=3,
+def train(grid_size=(5, 5), random_obstacles=True, max_obstacles=3,
           num_episodes=1000, num_samples=50):
-    
+    """
+    Training mit Curriculum Learning: Die Anzahl der Hindernisse steigt schrittweise.
+    """
     actions = [0, 1, 2, 3]
     agent = QLearningAgent(actions)
     q_table_file = "q_table.pkl"
@@ -35,10 +37,12 @@ def train(grid_size=(5, 5), random_obstacles=True, num_random_obstacles=3,
     all_sample_rewards = []
 
     for sample in range(num_samples):
+        # Curriculum: Hindernisse steigen progressiv von 0 bis max_obstacles
+        num_random_obstacles = int((sample / num_samples) * max_obstacles)
         env = SimEnv(
             grid_size=grid_size,
             random_obstacles=random_obstacles,
-            num_random_obstacles=random.randint(0, num_random_obstacles)
+            num_random_obstacles=num_random_obstacles
         )
         logging.info(f"[SAMPLE {sample}] Neues Environment mit {env.num_random_obstacles} Hindernissen")
 
@@ -49,22 +53,17 @@ def train(grid_size=(5, 5), random_obstacles=True, num_random_obstacles=3,
             env.position = random_start(env)
             total_reward = 0
 
+            # Epsilon Decay für stabileres Lernen
+            agent.epsilon = max(0.05, agent.epsilon * 0.995)
+
             for step in range(50):
                 valid_actions = env.get_valid_actions() or actions
+                # Agent wählt nur gültige Aktionen
                 action = agent.choose_action(state, valid_actions)
-
-                if action not in valid_actions:
-                    logging.warning(f"Achtung! Agent wählte ungültige Aktion: {action}")
 
                 next_state, reward, done = env.step(action)
                 valid_next_actions = env.get_valid_actions()
-                agent.learn(
-                    state,
-                    action,
-                    reward,
-                    next_state,
-                    valid_next_actions
-                    )
+                agent.learn(state, action, reward, next_state, valid_next_actions)
 
                 total_reward += reward
                 state = next_state
@@ -89,15 +88,13 @@ def train(grid_size=(5, 5), random_obstacles=True, num_random_obstacles=3,
 
 if __name__ == "__main__":
     max_grid_size = (40, 40)
-    # zufällige Grid-Größe wählen
     grid_size = (random.randint(5, max_grid_size[0]), random.randint(5, max_grid_size[1]))
-    # max. Hindernisse begrenzen
-    num_random_obstacles = grid_size[0] * grid_size[1] // 4
+    max_obstacles = grid_size[0] * grid_size[1] // 4
 
     train(
         grid_size=grid_size,
         random_obstacles=True,
-        num_random_obstacles=num_random_obstacles,
+        max_obstacles=max_obstacles,
         num_episodes=1000,
         num_samples=100
     )

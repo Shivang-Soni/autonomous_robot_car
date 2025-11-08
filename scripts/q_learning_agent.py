@@ -9,8 +9,6 @@ from __future__ import annotations
 import json
 import os
 import pickle
-import tempfile
-from typing import Any, Dict, List, Iterable
 import random
 import logging
 
@@ -30,47 +28,38 @@ class QLearningAgent:
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
-    
-    def _serialise_state(self, state: Any) -> str:
-        """
-        Wandelt jeden Zustand in eine hashbar, JSON kompatible Zeichenkette um
-        """
+
+    def _serialise_state(self, state) -> str:
+        """Wandelt jeden Zustand in eine hashbare, JSON-kompatible Zeichenkette um"""
         try:
             return json.dumps(state, sort_keys=True)
         except TypeError:
             return str(state)
 
     def get_q(self, state, action):
-        """
-        Q-Wert für einen Zustand und eine Aktion abrufen
-        """
+        """Q-Wert für einen Zustand und eine Aktion abrufen"""
         key = self._serialise_state(state)
         return self.q_table.get(key, {}).get(action, 0.0)
 
     def choose_action(self, state, valid_actions=None):
-        """
-        Wählt eine Aktion basierend auf epsilon-greedy
-        """
+        """Wählt eine Aktion basierend auf epsilon-greedy nur aus gültigen Aktionen"""
         if valid_actions is None or len(valid_actions) == 0:
             valid_actions = self.actions
+
         if random.random() < self.epsilon:
             return random.choice(valid_actions)
+
         q_values = [self.get_q(state, a) for a in valid_actions]
         max_q = max(q_values)
-        best_actions = [
-            a for a, q in zip(valid_actions, q_values) if q == max_q
-            ]
+        best_actions = [a for a, q in zip(valid_actions, q_values) if q == max_q]
         return random.choice(best_actions)
 
     def learn(self, state, action, reward, next_state, valid_next_actions=None):
-        """
-        Q-Learning Update
-        """
+        """Q-Learning Update"""
         state_key = self._serialise_state(state)
         next_state_key = self._serialise_state(next_state)
 
         old_q = self.get_q(state, action)
-
         if valid_next_actions is None or len(valid_next_actions) == 0:
             valid_next_actions = self.actions
 
@@ -82,30 +71,19 @@ class QLearningAgent:
         self.q_table[state_key][action] = new_q
 
     def save_q_table(self, filepath: str):
-        """
-        Speichert die Q-Tabelle in einer Datei
-        """
+        """Speichert die Q-Tabelle in einer Datei"""
         with open(filepath, 'wb') as f:
             pickle.dump(self.q_table, f)
-            logging.info(
-                f"[INFO] Q-Tabelle gespeichert in directory: {filepath}"
-                )
-    
+            logging.info(f"[INFO] Q-Tabelle gespeichert in directory: {filepath}")
+
     def load_q_table(self, filepath: str):
-        """
-        Lädt die Q-Tabelle aus einer Datei
-        """
+        """Lädt die Q-Tabelle aus einer Datei"""
         if os.path.exists(filepath):
             with open(filepath, 'rb') as f:
                 self.q_table = pickle.load(f)
-                logging.info(
-                    f"[INFO] Q-Tabelle geladen aus directory: {filepath}"
-                )
+                logging.info(f"[INFO] Q-Tabelle geladen aus directory: {filepath}")
         else:
-            logging.warning(
-                f"[WARN] Datei nicht gefunden: {filepath}."
-                f" Q-Tabelle nicht geladen."
-            )
+            logging.warning(f"[WARN] Datei nicht gefunden: {filepath}. Q-Tabelle nicht geladen.")
 
 
 # ==================== Testlauf ====================

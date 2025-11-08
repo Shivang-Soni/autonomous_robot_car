@@ -7,7 +7,6 @@ generate_sim_env.py
 import random
 import logging
 
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -24,12 +23,8 @@ class SimEnv:
         grid_size: (width, height)
         start_pos: Startposition (x, y)
         obstacles: Liste von (x,y)-Tuples, die feste Hindernisse sind
-        random_obstacles: falls True 
-        dann erzeuge num_random_obstacles zufällige Hindernisse
-        num_random_obstacles: Anzahl zufälliger Hindernisse
-        (aber nur wenn random_obstacles True)
+        random_obstacles: falls True, erzeuge num_random_obstacles zufällige Hindernisse
         """
-         
         if not (isinstance(grid_size, tuple) and len(grid_size) == 2):
             raise ValueError("grid_size muss ein Tuple (width, height) sein")
         self.grid_size = grid_size
@@ -44,42 +39,31 @@ class SimEnv:
         self.reset()
 
     def reset(self):
-        """
-        Setzt die Umgebung auf den Startzustand zurück.
-        """
+        """Setzt die Umgebung auf den Startzustand zurück"""
         self.position = self.start_pos
 
-        if (self.random_obstacles_flag):
+        if self.random_obstacles_flag:
             self._random_obstacles.clear()
             attempts = 0
-            while (len(self._random_obstacles)<self.num_random_obstacles and attempts < 100):
+            while len(self._random_obstacles) < self.num_random_obstacles and attempts < 100:
                 rx = random.randint(0, self.grid_size[0] - 1)
                 ry = random.randint(0, self.grid_size[1] - 1)
                 coordinates = (rx, ry)
-                # Nie wähle Start- oder Endpunkt als Hindernis
-                if coordinates == self.start_pos or coordinates == self.goal_pos:
-                    attempts += 1
-                    continue
-                # Keine Überschneidung mit festen Hindernissen
-                if coordinates in self._fixed_obstacles:
+                if coordinates in [self.start_pos, self.goal_pos] or coordinates in self._fixed_obstacles:
                     attempts += 1
                     continue
                 self._random_obstacles.add(coordinates)
                 attempts += 1
-                #logging.info(f"Hindenis bei {coordinates} vorhanden.")
        
-        self.obstacles = set(self._fixed_obstacles) | \
-            set(self._random_obstacles)
-
+        self.obstacles = set(self._fixed_obstacles) | set(self._random_obstacles)
         return self.position
 
     def _is_obstacle(self, coordinate):
-        """
-        Bestimmt, ob dieser Koordinat wirklich ein Hindernis.
-        """
+        """Bestimmt, ob dieser Koordinat wirklich ein Hindernis ist"""
         return coordinate in self.obstacles
     
     def get_valid_actions(self):
+        """Gibt alle gültigen Aktionen vom aktuellen Standort zurück"""
         x, y = self.position
         potential_actions = {
             0: (x, y-1),  # up
@@ -94,59 +78,43 @@ class SimEnv:
         ]
         return valid_actions
 
-
     def _next_position(self, action):
         x, y = self.position 
-        if action == 0: 
-            return (x, y-1)
-        elif action == 1:
-            return (x, y+1)
-        elif action == 2:
-            return (x-1, y)
-        elif action == 3:
-            return (x+1, y)
-        else:
-            return (x, y)
+        if action == 0: y -= 1
+        elif action == 1: y += 1
+        elif action == 2: x -= 1
+        elif action == 3: x += 1
+        return (x, y)
 
     def step(self, action):
-        """
-        action: 0=up, 1=down, 2=left, 3=right
-        return: next_state, reward, done
-        """
-        x, y = self.position
-        if action == 0 and y > 0:  # up
-            y -= 1
-        elif action == 1 and y < self.grid_size[1] - 1:  # down
-            y += 1
-        elif action == 2 and x > 0:  # left
-            x -= 1
-        elif action == 3 and x < self.grid_size[0] - 1:  # right
-            x += 1
-        else:
-            logging.warning(
-                f"Ungültige Aktion {action} an Position {self.position}"
-                )
-            return self.position, -5.0, False
-   
-        new_position = (x, y)
+        """Führt eine Aktion aus und gibt next_state, reward, done zurück"""
+        new_position = self._next_position(action)
 
-        if self._is_obstacle(new_position):
-            return self.position, -5.0, False
+        # Ungültige Aktion → Strafe
+        if (new_position[0] < 0 or new_position[0] >= self.grid_size[0] or
+            new_position[1] < 0 or new_position[1] >= self.grid_size[1] or
+            self._is_obstacle(new_position)):
+            return self.position, -10.0, False
+
+        self.position = new_position
 
         if new_position == self.goal_pos:
-            self.position = self.goal_pos
             return self.position, 10.0, True
-      
-        self.position = new_position
-        return self.position, -0.01, False
+
+        # Reward-Shaping: Fortschritt belohnen
+        old_dist = abs(self.position[0] - self.goal_pos[0]) + abs(self.position[1] - self.goal_pos[1])
+        new_dist = abs(new_position[0] - self.goal_pos[0]) + abs(new_position[1] - self.goal_pos[1])
+        reward = 0.1 if new_dist < old_dist else -0.01
+        return self.position, reward, False
      
     def render(self):
+        """Textuelle Darstellung der Umgebung"""
         for y in range(self.grid_size[1]):
             row = ""
             for x in range(self.grid_size[0]):
                 pos = (x, y)
                 if pos == self.position:
-                    row += "A "  # Agent
+                    row += "A "
                 elif pos == self.goal_pos:
                     row += "G "
                 elif pos in self.obstacles:
@@ -155,35 +123,3 @@ class SimEnv:
                     row += ". "
             print(row)
         print()
-
-
-if __name__ == "__main__":
-    env = SimEnv()
-    state = env.reset()
-    logging.info(f"Start State: {state}")
-    for _ in range(15):
-        valid_actions = []
-        x, y = env.position
-
-        if y > 0:
-            valid_actions.append(0)  # up
-        if y < env.grid_size[1] - 1:
-            valid_actions.append(1)  # down
-        if x > 0:
-            valid_actions.append(2)  # left
-        if x < env.grid_size[0] - 1:
-            valid_actions.append(3)  # right
-
-        action = random.choice(valid_actions)
-        next_state, reward, done = env.step(action)
-
-        if next_state == state:
-            continue
-
-        if done:
-            logging.info(
-                f"Reached goal at state: {next_state} with reward: {reward}"
-                )
-            break
-        else:
-            logging.info(f"Next State: {next_state}, Reward: {reward}")
