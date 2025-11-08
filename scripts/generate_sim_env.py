@@ -123,7 +123,6 @@ class SimEnv:
         print()
 
 
-
 if __name__ == "__main__":
     env = SimEnv()
     state = env.reset()
