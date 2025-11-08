@@ -1,76 +1,51 @@
 # autonomous_drive.py
-"""
-Autonomes Fahrmodul
-- Autor: Shivang Soni
-- Unterstützt: 
-    - Simulation (Dummy-Modus, ohne Hardware)
-    - Echte Hardware (ESP32 + Motoren + Sensorik über MQTT)
-- Integration mit Q-Learning Agent und Sensorik
-"""
-
 import time
-import random
-from sensors.ultrasonic_sensor import get_distance
-from motors.motor_controller import forward, backward, left, right, stop
+from env import RobotEnv, USE_HARDWARE
+from q_learning_agent import QLearningAgent
 
-# ====================== CONFIG ======================
-USE_HARDWARE = False  # True = echte Motoren, False = Dummy-Modus (Simulation)
-SAFE_DISTANCE = 15    # Mindestabstand in cm für Hindernisvermeidung
 
-def autonomous_drive_step(sensor_reading=None, action=None):
-    """
-    Führt einen Fahrbefehl aus:
-    - sensor_reading: optionaler Abstandswert (cm), sonst aus Sensor ermittelt
-    - action: optional, "forward"/"backward"/"left"/"right"/"stop"
-    Rückgabe: ausgeführte Aktion
-    """
-    if USE_HARDWARE:
-        # ====================== Sensor lesen ======================
-        if sensor_reading is None:
-            distance = get_distance()
-        else:
-            distance = sensor_reading
-    else:
-        # Dummy-Modus: zufällige Hindernisse simulieren
-        distance = random.randint(5, 50)
+def drive(num_episodes=500, max_steps=50):
+    actions = [0, 1, 2, 3]
+    agent = QLearningAgent(actions)
 
-    # ====================== Hindernisprüfung ======================
-    if distance is None:
-        print("Sensorfehler: stoppe Roboter")
-        if USE_HARDWARE: stop()
-        return "stop"
+    # Q-Table laden
+    try:
+        agent.load_q_table("q_table.pkl")
+        print("[INFO] Q-Table geladen")
+    except:
+        print("[INFO] Keine Q-Table gefunden, Training startet von Null")
 
-    if distance < SAFE_DISTANCE:
-        print(f"Hindernis erkannt ({distance}cm) → Rückwärts / Stopp")
-        if USE_HARDWARE:
-            stop()
-        return "stop"
+    for episode in range(num_episodes):
+        env = RobotEnv()
+        state = env.reset()
+        total_reward = 0
 
-    # ====================== Aktion ausführen ======================
-    if action is None:
-        # Zufällige Aktion im Dummy-Testmodus
-        action = random.choice(["forward", "left", "right"])
+        # Epsilon Decay
+        agent.epsilon = max(0.05, agent.epsilon * 0.995)
 
-    print(f"Fahre: {action} | Abstand: {distance}cm")
+        for step in range(max_steps):
+            action = agent.choose_action(state, actions)
+            next_state, reward, done = env.step(action)
+            agent.learn(state, action, reward, next_state, actions)
+            total_reward += reward
+            state = next_state
 
-    if USE_HARDWARE:
-        if action == "forward":
-            forward()
-        elif action == "backward":
-            backward()
-        elif action == "left":
-            left()
-        elif action == "right":
-            right()
-        else:
-            stop()
+            env.render()
+            if done:
+                print(f"[Episode {episode}] Hindernis erkannt, Stop")
+                break
 
-    return action
+        print(f"[Episode {episode}] Total Reward: {total_reward}")
 
-# ====================== TESTLAUF ======================
+    agent.save_q_table("q_table.pkl")
+    print("[INFO] Q-Table gespeichert, Training beendet")
+
+
 if __name__ == "__main__":
-    print("Autonomous Drive Testlauf gestartet (Dummy-Modus)")
-    for _ in range(10):
-        a = autonomous_drive_step()
-        print(f"Ausgeführte Aktion: {a}")
-        time.sleep(1)
+    print("Starte autonomes Fahren auf ESP32")
+    if USE_HARDWARE:
+        print("Hardware-Modus aktiviert")
+    else:
+        print("Simulation/Dummy-Modus aktiviert")
+
+    drive()
