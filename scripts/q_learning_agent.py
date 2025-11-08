@@ -47,20 +47,22 @@ class QLearningAgent:
         key = self._serialise_state(state)
         return self.q_table.get(key, {}).get(action, 0.0)
 
-    def choose_action(self, state):
+    def choose_action(self, state, valid_actions=None):
         """
         Wählt eine Aktion basierend auf epsilon-greedy
         """
+        if valid_actions is None or len(valid_actions) == 0:
+            valid_actions = self.actions
         if random.random() < self.epsilon:
-            # Zufällige Aktion (Exploration)
-            return random.choice(self.actions)
-        # Beste Aktion (Exploitation)
-        q_values = [self.get_q(state, a) for a in self.actions]
+            return random.choice(valid_actions)
+        q_values = [self.get_q(state, a) for a in valid_actions]
         max_q = max(q_values)
-        best_actions = [a for a, q in zip(self.actions, q_values) if q == max_q]
+        best_actions = [
+            a for a, q in zip(valid_actions, q_values) if q == max_q
+            ]
         return random.choice(best_actions)
 
-    def learn(self, state, action, reward, next_state):
+    def learn(self, state, action, reward, next_state, valid_next_actions=None):
         """
         Q-Learning Update
         """
@@ -68,7 +70,11 @@ class QLearningAgent:
         next_state_key = self._serialise_state(next_state)
 
         old_q = self.get_q(state, action)
-        next_max_q = max([self.get_q(next_state, a) for a in self.actions])
+
+        if valid_next_actions is None or len(valid_next_actions) == 0:
+            valid_next_actions = self.actions
+
+        next_max_q = max([self.get_q(next_state, a) for a in valid_next_actions])
         new_q = old_q + self.alpha * (reward + self.gamma * next_max_q - old_q)
 
         if state_key not in self.q_table:

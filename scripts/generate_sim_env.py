@@ -66,7 +66,7 @@ class SimEnv:
                     continue
                 self._random_obstacles.add(coordinates)
                 attempts += 1
-                logging.info(f"Hindenis bei {coordinates} vorhanden.")
+                #logging.info(f"Hindenis bei {coordinates} vorhanden.")
        
         self.obstacles = set(self._fixed_obstacles) | \
             set(self._random_obstacles)
@@ -78,6 +78,35 @@ class SimEnv:
         Bestimmt, ob dieser Koordinat wirklich ein Hindernis.
         """
         return coordinate in self.obstacles
+    
+    def get_valid_actions(self):
+        x, y = self.position
+        potential_actions = {
+            0: (x, y-1),  # up
+            1: (x, y+1),  # down
+            2: (x-1, y),  # left
+            3: (x+1, y)   # right
+        }
+        valid_actions = [
+            a for a, (nx, ny) in potential_actions.items()
+            if 0 <= nx < self.grid_size[0] and 0 <= ny < self.grid_size[1]
+            and (nx, ny) not in self.obstacles
+        ]
+        return valid_actions
+
+
+    def _next_position(self, action):
+        x, y = self.position 
+        if action == 0: 
+            return (x, y-1)
+        elif action == 1:
+            return (x, y+1)
+        elif action == 2:
+            return (x-1, y)
+        elif action == 3:
+            return (x+1, y)
+        else:
+            return (x, y)
 
     def step(self, action):
         """
@@ -97,15 +126,20 @@ class SimEnv:
             logging.warning(
                 f"Ungültige Aktion {action} an Position {self.position}"
                 )
-        self.position = (x, y)
+            return self.position, -5.0, False
+   
+        new_position = (x, y)
 
-        if self.position == self.goal_pos:
-            return self.position, 10.0, True 
-        elif self._is_obstacle(self.position):
-            return self.position, -1, False
-        else:
-            return self.position, -0.01, False
- 
+        if self._is_obstacle(new_position):
+            return self.position, -5.0, False
+
+        if new_position == self.goal_pos:
+            self.position = self.goal_pos
+            return self.position, 10.0, True
+      
+        self.position = new_position
+        return self.position, -0.01, False
+     
     def render(self):
         for y in range(self.grid_size[1]):
             row = ""
