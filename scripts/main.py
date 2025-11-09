@@ -1,117 +1,142 @@
 # main.py
 """
-Hauptskript für autonome Roboterplattform
-- MLOps-tauglich: Logging, State Management, Testmodus ohne Hardware
-- Hardware-ready: ESP32, Motoren, Sensorik via MQTT
+Hauptskript für autonome Roboterplattform 'Daisy'
+--------------------------------------------------
+- Q-Learning-Training mit optionalem Hardware-Support (ESP32 via MQTT)
+- Simulation/Dummy-Modus möglich, wenn USE_HARDWARE = False
+- Robuste Speicherung & Wiederherstellung der Q-Tabelle
 - Autor: Shivang Soni
 """
 
-from load_docs import load_documents
 import pickle
-from ml_models import create_rag_chain, load_llama
-from speech import speech_to_text, speak
-from autonomous_drive import autonomous_drive_'
-from llm_control import llm_controller
-from memory.conversation import add_message
-from memory.log import log_event
+import logging
+from time import sleep, time
+from env import RobotEnv, USE_HARDWARE
 from q_learning_agent import QLearningAgent
-from env import RobotEnv
-
+from memory.log import log_event
+from ml_models.rag_transformer import interactive_loop
+from scripts.train_sim_env import execute
+from scripts.config import USE_HARDWARE, MAX_RUNNING_TIME
 import paho.mqtt.client as mqtt
+
+# ================= LOGGING =================
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 # ================= MQTT SETUP =================
 def on_message(client, userdata, msg):
-    print(f"[ESP32] Nachricht empfangen: {msg.topic} -> {msg.payload.decode()}")
+    """Callback für eingehende MQTT-Nachrichten vom ESP32."""
+    logging.info(f"[ESP32] Nachricht empfangen: {msg.topic} -> {msg.payload.decode()}")
 
-client = mqtt.Client()
-client.on_message = on_message
-client.connect("localhost", 1883)  # MQTT Broker-Adresse anpassen
-client.subscribe("esp32/status")
-client.loop_start()
+mqtt_client = mqtt.Client()
+mqtt_client.on_message = on_message
+mqtt_client.connect("localhost", 1883)  # MQTT-Broker-Adresse
+mqtt_client.subscribe("esp32/status")
+mqtt_client.loop_start()
 
-def send_command_to_motor(command):
-    """
-    Sendet Fahrbefehle an ESP32 via MQTT
-    """
-    client.publish("esp32/motors", command)
-    print(f"[MQTT] COMMAND: {command} an den Fahrzeug-Roboter geschickt!")
+def send_command_to_motor(command: str):
+    """Sende einen Steuerbefehl über MQTT an den ESP32."""
+    mqtt_client.publish("esp32/motors", command)
+    logging.info(f"[MQTT] COMMAND gesendet: {command}")
 
-# ================= HARDWARE/MODE =================
-USE_HARDWARE = True  # True = echte Hardware, False = Dummy-Modus
+# ================= HAUPTPROGRAMM =================
+if __name__ == "__main__":
+    # ==== Q-LEARNING INITIALISIERUNG ====
+    actions = [0, 1, 2, 3]  # 0=stop, 1=forward, 2=left, 3=right
+    agent = QLearningAgent(actions=actions, alpha=0.1, gamma=0.9, epsilon=0.2)
 
-# ================= Q-LEARNING AGENT =================
-actions = [0, 1, 2, 3]  # 0=stop,1=forward,2=left,3=right
-agent = QLearningAgent(actions=actions, alpha=0.1, gamma=0.9, epsilon=0.2)
+    # ==== HARDWARE-LOGIK ====
+    if USE_HARDWARE:
+        # MQTT-Befehle als Lambda-Funktionen (vereinfachter Aufruf)
+        stop = lambda: send_command_to_motor("stop")
+        forward = lambda: send_command_to_motor("forward")
+        left = lambda: send_command_to_motor("left")
+        right = lambda: send_command_to_motor("right")
 
-# ================= RAG & LLM =================
-file = "data/docs"
-docs = load_documents(file)
-retriever, rag_chain = create_rag_chain(docs)
-model, tokenizer = load_llama()
+        # Reihenfolge entspricht actions = [0,1,2,3]
+        commands = [stop, forward, left, right]
 
-# ================= HARDWARE-FUNKTIONEN =================
-if USE_HARDWARE:
-    from sensors.ultrasonic_sensor import get_distance
+        save_loc = "q_table.pkl"
+        num_episodes = 50
 
-    # Motorfunktionen umleiten auf MQTT
-    forward = lambda: send_command_to_motor("forward")
-    backward = lambda: send_command_to_motor("backward")
-    right = lambda: send_command_to_motor("right")
-    left = lambda: send_command_to_motor("left")
-    stop = lambda: send_command_to_motor("stop")
-else:
-    # Dummy/Simulation: Q-Learning testen ohne Hardware
-    save_loc = "q_table.pkl"
-    num_episodes = 50
-    cum_rewards = []
+        # ==== Q-TABELLE LADEN ====
+        try:
+            with open(save_loc, "rb") as f:
+                agent.q_table = pickle.load(f)
+                logging.info("✅ Q-Tabelle erfolgreich geladen.")
+        except FileNotFoundError:
+            logging.warning("⚠️  Keine Q-Tabelle gefunden – starte neues Training.")
 
-    with open(save_loc, "rb") as f:
-        agent.q_table = pickle.load(f)
+        # ==== TRAINING ====
+        try:
+            start_time = time()
+            last_save_time = start_time
+            env = RobotEnv()
+            interactive_loop(False)  # Kein Blockieren während Training
 
-    for _ in range(num_episodes):
-        env = RobotEnv()
-        state = env.reset()
-        done = False
-        reward_sum = 0
-        step_count = 0
-        while not done:
-            action = agent.choose_action(state)
-            next_state, reward, done = env.step(action)
-            reward_sum += reward
-            agent.learn(state, action, reward, next_state)
-            state = next_state
-            step_count += 1
-        cum_rewards.append(reward_sum)
-        print(f"Episode beendet nach {step_count} Schritten, Reward={reward_sum}")
+            episode = 0
+            total_reward = 0
 
-    # Ergebnisse speichern
-    with open(save_loc, "wb") as f:
-        pickle.dump(agent.q_table, f)
-    with open("rewards.pkl", "wb") as f:
-        pickle.dump(cum_rewards, f)
+            while True:
+                state = env.reset()
+                done = False
+                episode += 1
+                episode_reward = 0
 
-# ================= HAUPT-LOOP =================
-try:
-    while True:
-        query = speech_to_text(duration=5)
-        if query.lower() in ["exit", "quit", "stop"]:
-            print("Beende Programm...")
-            break
+                while not done:
+                    # 1️⃣ Aktion wählen
+                    action = agent.choose_action(state)
 
-        # LLM Controller
-        res = llm_controller(query)
-        add_message(query, res)
-        print("Antwort:", res)
+                    # 2️⃣ Ausführen der Aktion auf der Hardware
+                    commands[action]()
 
-        # TTS nur, wenn keine COMMAND-Antwort
-        if "COMMAND:" not in res:
-            speak(res)
-        else:
-            log_event(res)
+                    # 3️⃣ Umgebungsschritt durchführen (Sensorwerte & Belohnung)
+                    next_state, reward, done = env.step(action)
 
-        # Autonomes Fahren
-        if USE_HARDWARE:
-            autonomous_drive(agent, get_distance, forward, left, right, stop)
+                    # 4️⃣ Q-Learning-Update
+                    agent.learn(state, action, reward, next_state)
 
-except KeyboardInterrupt:
-    print("Programm wurde frühzeitig beendet.")
+                    # 5️⃣ Zustand & Belohnung aktualisieren
+                    state = next_state
+                    episode_reward += reward
+
+                    # 6️⃣ Fortschritt visualisieren
+                    env.render()
+                    sleep(0.2)
+
+                total_reward += episode_reward
+                logging.info(f"[EPISODE {episode}] Reward: {episode_reward:.2f}")
+
+                # Zeitlimit prüfen
+                elapsed_time = time() - start_time
+                if elapsed_time >= int(MAX_RUNNING_TIME) * 60:
+                    logging.info("⏱️  Maximale Laufzeit erreicht – Training wird beendet.")
+                    break
+
+                # Q-Tabelle regelmäßig speichern
+                if time() - last_save_time >= 5:
+                    try:
+                        with open(save_loc, "wb") as f:
+                            pickle.dump(agent.q_table, f)
+                        logging.info(
+                            f"💾 Q-Tabelle gespeichert | Laufzeit: {elapsed_time:.1f}s | "
+                            f"Gesamt-Reward: {total_reward:.1f} | Episode: {episode}"
+                        )
+                    except Exception as e:
+                        logging.warning(f"⚠️  Fehler beim Speichern der Q-Tabelle: {e}")
+                    last_save_time = time()
+
+        except KeyboardInterrupt:
+            logging.info("🛑 Training manuell beendet (Ctrl+C).")
+
+        except Exception as e:
+            logging.error(f"[ERROR] Unerwarteter Fehler im Hauptloop: {e}", exc_info=True)
+
+        finally:
+            # Sicherheits-Stopp für Motoren & MQTT-Thread
+            stop()
+            mqtt_client.loop_stop()
+            logging.info("✅ System heruntergefahren und Motor gestoppt.")
+
+    # ==== SIMULATIONSMODUS ====
+    else:
+        execute()

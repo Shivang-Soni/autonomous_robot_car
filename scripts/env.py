@@ -6,8 +6,12 @@ RobotEnv für Daisy – ESP32-tauglich
 import random
 import time
 import machine
+import logging
+from scripts.config import USE_HARDWARE
 
-USE_HARDWARE = True  # True = echte Sensoren/Motoren, False = Dummy-Modus
+# Logging Konfiguration
+logging.basicConfig(level=logging.INFO)
+
 
 class RobotEnv:
     def __init__(self):
@@ -79,4 +83,4 @@ class RobotEnv:
         return dist, reward, done
 
     def render(self):
-        print(f"Distance: {self.distance:.1f} cm")
+        logging.info(f"Distance: {self.distance:.1f} cm")

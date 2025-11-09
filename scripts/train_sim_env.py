@@ -86,7 +86,7 @@ def train(grid_size=(5, 5), random_obstacles=True, max_obstacles=3,
     logging.info(f"[INFO] Q-Tabelle gespeichert in {q_table_file}")
 
 
-if __name__ == "__main__":
+def execute():
     max_grid_size = (40, 40)
     grid_size = (random.randint(5, max_grid_size[0]), random.randint(5, max_grid_size[1]))
     max_obstacles = grid_size[0] * grid_size[1] // 4
@@ -98,3 +98,7 @@ if __name__ == "__main__":
         num_episodes=1000,
         num_samples=100
     )
+
+
+if __name__ == "__main__":
+    execute()
