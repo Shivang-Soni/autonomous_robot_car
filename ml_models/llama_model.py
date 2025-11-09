@@ -8,6 +8,7 @@ LLaMA-2-7B laden mit 4-bit Quantisierung
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import torch
 
+
 def load_llama(model_path: str = "./models/llama-2-7b-4bit"):
     """
     Lädt das LLaMA-2-7B Modell mit 4-bit Quantisierung.
@@ -26,7 +27,7 @@ def load_llama(model_path: str = "./models/llama-2-7b-4bit"):
     # ====================== Modell ======================
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        quantization_config=bnb_config,  # korrigiert: quantization_config (statt quantiziation_config)
+        quantization_config=bnb_config,
         device_map="auto"                 # GPU/CPU automatisch wählen
     )
 
