@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 state = next_state
                 total_reward += reward
                 episode += 1
-                if (episode % 10 == 0):
+                if (episode % 100 == 0):
                     env.render()
 
                 elapsed_time = time()-start_time
