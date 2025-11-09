@@ -93,7 +93,7 @@ if __name__ == "__main__":
                     done = True
                     break
                 # Alle 5 Sekunden die Q Tabelle speichern und reward loggen
-                if (time() - last_save_time >= 5):
+                if (time() - last_save_time >= 10):
                     # Protokolliere und speichere Nachricht
                     message = (
                         f"[INFO] Time elapsed: {elapsed_time}"
