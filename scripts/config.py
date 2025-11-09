@@ -28,3 +28,4 @@ USE_HARDWARE = False  # True = echte Motoren/Sensoren, False = Dummy-Modus
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")  # Google Gemini API-Schlüssel
 USE_GEMINI = os.getenv("USE_GEMINI", "True")
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
+MAX_RUNNING_TIME = os.getenv("MAX_RUNNING_TIME", "5")
