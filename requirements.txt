@@ -30,4 +30,6 @@ accelerate>=0.23.0
 ctransformers>=0.2.27
 google-genai>=0.3.0
 
+# MQTTT
+paho-mqtt>=1.6.1
 
