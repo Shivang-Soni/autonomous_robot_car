@@ -9,7 +9,7 @@ Hauptskript für autonome Roboterplattform
 import pickle
 import logging
 from time import sleep, time
-from env import RobotEnv, USE_HARDWARE
+from env import RobotEnv
 from q_learning_agent import QLearningAgent
 from memory.conversation import add_message
 from memory.log import log_event
@@ -95,9 +95,11 @@ if __name__ == "__main__":
                 # Alle 5 Sekunden die Q Tabelle speichern und reward loggen
                 if (time() - last_save_time >= 5):
                     # Protokolliere und speichere Nachricht
-                    message = f"[INFO] Time elapsed: {elapsed_time}"
-                    f" | Total_reward: {total_reward}"
-                    f" | Episode: {episode} "
+                    message = (
+                        f"[INFO] Time elapsed: {elapsed_time}"
+                        f" | Total_reward: {total_reward}"
+                        f" | Episode: {episode}"
+                        )
                     logging.info(message)
                     log_event(message)
                     with open(save_loc, "wb") as f:
