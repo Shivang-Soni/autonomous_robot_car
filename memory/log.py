@@ -9,6 +9,7 @@ import json
 import time
 from scripts.config import LOG_FILE  # Definiere LOG_FILE in scripts/config.py
 
+
 # ====================== FUNKTIONEN ======================
 def log_event(event: str):
     """
@@ -27,6 +28,7 @@ def log_event(event: str):
             f.write(json.dumps(data) + "\n")
     except Exception as e:
         print(f"[WARN] Logging fehlgeschlagen: {e}")
+
 
 # ====================== TESTLAUF ======================
 if __name__ == "__main__":
