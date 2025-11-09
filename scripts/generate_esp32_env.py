@@ -38,12 +38,12 @@ header_file.parent.mkdir(exist_ok=True, parents=True)
 # ===================== Header-Datei generieren =====================
 with open(header_file, "w") as f:
     f.write("/* Auto-generated esp32_env.h by Shivang Soni */\n\n")
-    f.write(f'const char* WIFI_SSID = "{variables["WIFI_SSID"]}";\n')
-    f.write(f'const char* WIFI_PASSWORD = "{variables["WIFI_PASSWORD"]}";\n')
-    f.write(f'const char* MQTT_SERVER = "{variables["MQTT_SERVER"]}";\n')
+    f.write(f'const char* ENV_WIFI_SSID = "{variables["WIFI_SSID"]}";\n')
+    f.write(f'const char* ENV_WIFI_PASSWORD = "{variables["WIFI_PASSWORD"]}";\n')
+    f.write(f'const char* ENV_MQTT_SERVER = "{variables["MQTT_SERVER"]}";\n')
 
     # Python-Boolean in C++-Literal umwandeln
     use_hw = str(variables["USE_HARDWARE"]).lower() in ["true", "1", "yes"]
-    f.write(f'const bool USE_HARDWARE = {"true" if use_hw else "false"};\n')
+    f.write(f'const bool ENV_USE_HARDWARE = {"true" if use_hw else "false"};\n')
 
 logging.info(f"\n[INFO]Header wird geschrieben nach: {header_file}")
